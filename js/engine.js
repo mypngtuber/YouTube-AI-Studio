@@ -169,6 +169,9 @@ const Engine = (() => {
     if (err.code === 'NO_KEY' || msg === 'NO_KEY') {
       msg = 'مفتاح Gemini API غير موجود';
       hint = 'أضف المفتاح من <a href="#/settings">الإعدادات</a>. يمكنك الحصول على مفتاح مجانى من <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>.';
+    } else if (err.code === 'NO_OPENAI_KEY' || msg === 'NO_OPENAI_KEY') {
+      msg = 'مفتاح OpenAI API غير موجود';
+      hint = 'اخترت نموذج GPT فى أوركسترا النماذج لكن مفتاح OpenAI غير مضاف. أضفه من <a href="#/settings">الإعدادات</a> أو اختر نموذج Gemini بدلاً منه.';
     } else if (err.code === 'NO_YT_KEY' || msg === 'NO_YT_KEY') {
       msg = 'مفتاح YouTube Data API غير موجود';
       hint = 'أضف المفتاح من <a href="#/settings">الإعدادات</a>. أنشئه من <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Google Cloud Console</a> بعد تفعيل YouTube Data API v3.';

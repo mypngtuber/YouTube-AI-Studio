@@ -145,6 +145,12 @@ const App = (() => {
   }
 
   /* ============ صفحة الإعدادات ============ */
+  /** خيارات قائمة النماذج: مجموعتا Gemini و OpenAI */
+  function modelOptions(selected) {
+    const grp = (label, models) => `<optgroup label="${label}">${models.map(m => `<option value="${m}"${m === selected ? ' selected' : ''}>${m}</option>`).join('')}</optgroup>`;
+    return grp('Google Gemini', Gemini.MODELS) + grp('OpenAI GPT', OpenAI.MODELS);
+  }
+
   function renderSettings() {
     const s = Store.settings();
     breadcrumb().textContent = 'الإعدادات';
@@ -162,17 +168,41 @@ const App = (() => {
             <label class="field"><span>مفتاح YouTube Data API v3 <span style="color:var(--red)">*</span></span>
               <input type="password" id="set-yt" value="${UI.esc(s.ytKey)}" placeholder="AIza..." autocomplete="off">
               <small class="sub">من <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Google Cloud Console</a> بعد تفعيل YouTube Data API v3</small></label>
-            <label class="field"><span>OAuth Client ID (اختيارى — لبيانات Analytics الخاصة)</span>
+            <label class="field"><span>مفتاح OpenAI API (اختيارى — لنماذج GPT)</span>
+              <input type="password" id="set-openai" value="${UI.esc(s.openaiKey)}" placeholder="sk-..." autocomplete="off">
+              <small class="sub">من <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">OpenAI Platform</a> — يفعّل نماذج gpt-5.5 و gpt-5 بجانب Gemini</small></label>
+            <label class="field"><span>OAuth Client ID (اختيارى — لـ Analytics وتعديل الفيديوهات)</span>
               <input type="text" id="set-oauth" value="${UI.esc(s.oauthClientId)}" placeholder="xxxx.apps.googleusercontent.com" autocomplete="off">
-              <small class="sub">يفعّل CTR ووقت المشاهدة والإيرادات. أنشئ OAuth Client من نوع Web وأضف نطاق موقعك فى Authorized JavaScript origins.</small></label>
-            <label class="field"><span>النموذج المفضل</span>
+              <small class="sub">يفعّل CTR ووقت المشاهدة والإيرادات وتعديل معلومات فيديوهاتك. أنشئ OAuth Client من نوع Web وأضف نطاق موقعك فى Authorized JavaScript origins.</small></label>
+            <label class="field"><span>النموذج المفضل (نماذج Gemini)</span>
               <select id="set-model">${Gemini.MODELS.map(m => `<option${m === s.model ? ' selected' : ''}>${m}</option>`).join('')}</select>
               <small class="sub">عند فشل النموذج يتم التبديل تلقائياً للنماذج الأخرى</small></label>
           </div>
           <div class="actions-bar">
             <button type="button" class="btn btn-secondary btn-sm" id="test-gemini"><i class="fa-solid fa-vial"></i> اختبار مفتاح Gemini</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="test-openai"><i class="fa-solid fa-vial"></i> اختبار مفتاح OpenAI</button>
             <button type="button" class="btn btn-secondary btn-sm" id="test-yt"><i class="fa-solid fa-vial"></i> اختبار مفتاح YouTube</button>
             <button type="button" class="btn btn-secondary btn-sm" id="connect-oauth"><i class="fa-solid fa-plug"></i> اختبار اتصال Analytics</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:18px">
+          <h3><i class="fa-solid fa-sliders"></i> أوركسترا النماذج — وضع العمل</h3>
+          <p class="sub" style="margin-top:6px">اختر كيف تعمل النماذج معاً فى كل الأدوات. النماذج التى تبدأ بـ gpt تتطلب مفتاح OpenAI.</p>
+          <div class="tool-form" style="margin-top:12px">
+            <label class="field" style="grid-column:1/-1"><span>وضع العمل</span>
+              <select id="set-aimode">
+                <option value="1"${s.aiMode === '1' ? ' selected' : ''}>الوضع 1 — نموذج واحد (الأسرع والأوفر)</option>
+                <option value="2"${s.aiMode === '2' ? ' selected' : ''}>الوضع 2 — نموذجان بالتوازى وعرض النتيجتين معاً</option>
+                <option value="3"${s.aiMode === '3' ? ' selected' : ''}>الوضع 3 — نموذجان + حَكَم ثالث يدمج أفضل ما فيهما</option>
+                <option value="4"${s.aiMode === '4' ? ' selected' : ''}>الوضع 4 — مناقشة: مسودة ← نقد ← صياغة نهائية</option>
+              </select></label>
+            <label class="field"><span>النموذج A (الأساسى)</span>
+              <select id="set-model-a">${modelOptions(s.modelA || s.model)}</select></label>
+            <label class="field"><span>النموذج B (للأوضاع 2-4)</span>
+              <select id="set-model-b">${modelOptions(s.modelB || 'gemini-2.5-flash')}</select></label>
+            <label class="field"><span>نموذج الحَكَم (للوضع 3)</span>
+              <select id="set-model-judge">${modelOptions(s.modelJudge || s.modelA || s.model)}</select></label>
           </div>
         </div>
 
@@ -210,8 +240,13 @@ const App = (() => {
       Store.saveSettings({
         geminiKey: $('set-gemini').value.trim(),
         ytKey: $('set-yt').value.trim(),
+        openaiKey: $('set-openai').value.trim(),
         oauthClientId: $('set-oauth').value.trim(),
         model: $('set-model').value,
+        aiMode: $('set-aimode').value,
+        modelA: $('set-model-a').value,
+        modelB: $('set-model-b').value,
+        modelJudge: $('set-model-judge').value,
         channelId: $('set-channel').value.trim(),
         niche: $('set-niche').value.trim(),
         competitors: $('set-competitors').value.trim()
@@ -224,6 +259,15 @@ const App = (() => {
       if (!key) return UI.toast('أدخل مفتاح Gemini أولاً', 'warning');
       UI.spinner(true, 'جارِ اختبار مفتاح Gemini...');
       try { await Gemini.testKey(key); UI.toast('مفتاح Gemini يعمل ✓', 'success'); }
+      catch (e) { UI.toast('فشل: ' + e.message, 'error', 5000); }
+      finally { UI.spinner(false); }
+    });
+
+    $('test-openai').addEventListener('click', async () => {
+      const key = $('set-openai').value.trim();
+      if (!key) return UI.toast('أدخل مفتاح OpenAI أولاً', 'warning');
+      UI.spinner(true, 'جارِ اختبار مفتاح OpenAI...');
+      try { await OpenAI.testKey(key); UI.toast('مفتاح OpenAI يعمل ✓', 'success'); }
       catch (e) { UI.toast('فشل: ' + e.message, 'error', 5000); }
       finally { UI.spinner(false); }
     });

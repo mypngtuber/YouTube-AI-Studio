@@ -22,9 +22,14 @@ const Store = (() => {
   const DEFAULT_SETTINGS = {
     geminiKey: '',
     ytKey: '',
+    openaiKey: '',
     oauthClientId: '',
     channelId: '',
     model: 'gemini-3.5-flash',
+    aiMode: '1',          // وضع الأوركسترا: 1 نموذج واحد / 2 توازى / 3 تحكيم / 4 مناقشة
+    modelA: '',           // النموذج الأساسى (فارغ = نفس model)
+    modelB: '',           // النموذج الثانى للأوضاع 2-4
+    modelJudge: '',       // نموذج الحَكَم للوضع 3
     theme: 'light',
     language: 'ar',
     niche: '',
